@@ -46,6 +46,8 @@ type Config struct {
 	DBMaxOpenConns    int    `mapstructure:"APP_GO_CDC_DB_MAX_OPEN_CONNS"`
 	DBMaxIdleConns    int    `mapstructure:"APP_GO_CDC_DB_MAX_IDLE_CONNS"`
 	DBConnMaxLifetime int    `mapstructure:"APP_GO_CDC_DB_CONN_MAX_LIFETIME"` // in minutes
+	DBTrustServerCert bool   `mapstructure:"APP_GO_CDC_DB_TRUST_SERVER_CERT"`
+	DBEncrypt         bool   `mapstructure:"APP_GO_CDC_DB_ENCRYPT"`
 }
 
 func (c *Config) ToString(showSecrets bool) string {
@@ -110,6 +112,9 @@ func LoadConfig(path string) (*Config, static.ErrorUtil) {
 		viper.SetDefault("APP_GO_CDC_DB_MAX_OPEN_CONNS", static.APP_GO_CDC_DB_MAX_OPEN_CONNS)
 		viper.SetDefault("APP_GO_CDC_DB_MAX_IDLE_CONNS", static.APP_GO_CDC_DB_MAX_IDLE_CONNS)
 		viper.SetDefault("APP_GO_CDC_DB_CONN_MAX_LIFETIME", static.APP_GO_CDC_DB_CONN_MAX_LIFETIME)
+
+		viper.SetDefault("APP_GO_CDC_DB_TRUST_SERVER_CERT", static.APP_GO_CDC_DB_TRUST_SERVER_CERT)
+		viper.SetDefault("APP_GO_CDC_DB_ENCRYPT", static.APP_GO_CDC_DB_ENCRYPT)
 
 		viper.AutomaticEnv()
 
@@ -184,6 +189,20 @@ func LoadConfig(path string) (*Config, static.ErrorUtil) {
 	} else {
 		if v, err := strconv.Atoi(dbConnMaxLifetime); err == nil {
 			cfg.DBConnMaxLifetime = v
+		}
+	}
+
+	dbTrustServerCert := os.Getenv("APP_GO_CDC_DB_TRUST_SERVER_CERT")
+	if dbTrustServerCert != "" {
+		if v, err := strconv.ParseBool(dbTrustServerCert); err == nil {
+			cfg.DBTrustServerCert = v
+		}
+	}
+
+	dbEncrypt := os.Getenv("APP_GO_CDC_DB_ENCRYPT")
+	if dbEncrypt != "" {
+		if v, err := strconv.ParseBool(dbEncrypt); err == nil {
+			cfg.DBEncrypt = v
 		}
 	}
 

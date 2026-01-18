@@ -32,7 +32,8 @@ func (c *connParams) GetConnString(showPassword bool) string {
 		"password=" + password + ";" +
 		"port=" + c.DBPort + ";" +
 		"database=" + c.DBName + ";" +
-		"encrypt=false"
+		"encrypt=" + "true" + ";" +
+		"trustservercertificate=" + "true" + ";"
 }
 
 var ConnConfig *connParams
@@ -83,6 +84,8 @@ func Init(config *config.Config) static.ErrorUtil {
 		log.Error().Msg("Database configuration is incomplete.")
 		return static.ErrEnvVarMissing
 	}
+
+	Connect(config)
 
 	return nil
 }

@@ -93,7 +93,7 @@ func (c *Config) ToString(showSecrets bool) string {
 	return sb.String()
 }
 
-func LoadConfig(path string) (*Config, error) {
+func LoadConfig(path string) (*Config, static.ErrorUtil) {
 	dlog.Print("Loading config...")
 
 	if ReadEnvFromFileEnabled() {
@@ -105,7 +105,7 @@ func LoadConfig(path string) (*Config, error) {
 		viper.SetDefault("APP_GO_CDC_NAME", static.APP_GO_CDC_NAME)
 		viper.SetDefault("APP_GO_CDC_ENV", static.APP_GO_CDC_ENV)
 		viper.SetDefault("APP_GO_CDC_LOG_LEVEL", static.APP_GO_CDC_LOG_LEVEL)
-		viper.SetDefault("APP_GO_CDC_READ_ENV_FROM_FILE", static.APP_GO_CDC_READ_ENV_FROM_FILE)
+		viper.SetDefault("APP_GO_CDC_READ_ENV_FROM_FILE", "true")
 
 		viper.SetDefault("APP_GO_CDC_DB_MAX_OPEN_CONNS", static.APP_GO_CDC_DB_MAX_OPEN_CONNS)
 		viper.SetDefault("APP_GO_CDC_DB_MAX_IDLE_CONNS", static.APP_GO_CDC_DB_MAX_IDLE_CONNS)
@@ -115,15 +115,17 @@ func LoadConfig(path string) (*Config, error) {
 
 		if err := viper.ReadInConfig(); err != nil {
 			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-				dlog.Fatalf("Config file not found in path: %s", path)
-				return nil, err
+				dlog.Print("Config file not found in path")
+				errUtil := static.NewErrorUtil("Configuration file not found", "CONFIG_FILE_NOT_FOUND", err, err.Error())
+				return nil, errUtil
 			}
 		}
 
 		var cfg Config
 		if err := viper.Unmarshal(&cfg); err != nil {
-			dlog.Fatalf("Unable to decode into struct: %v", err)
-			return nil, err
+			dlog.Print("Unable to decode into struct")
+			errUtil := static.NewErrorUtil("Failed to decode configuration", "CONFIG_DECODE_FAILED", err, err.Error())
+			return nil, errUtil
 		}
 		return &cfg, nil
 	}
@@ -137,11 +139,7 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	cfg.AppEnv = appEnv
 
-	appReadEnvFromFile := os.Getenv("APP_GO_CDC_READ_ENV_FROM_FILE")
-	if appReadEnvFromFile == "" {
-		appReadEnvFromFile = static.APP_GO_CDC_READ_ENV_FROM_FILE
-	}
-	cfg.AppReadEnvFromFile = appReadEnvFromFile
+	cfg.AppReadEnvFromFile = "false"
 
 	appName := os.Getenv("APP_GO_CDC_NAME")
 	if appName == "" {

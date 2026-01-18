@@ -15,7 +15,7 @@ func main() {
 
 	cfg, err := config.LoadConfig(".")
 	if err != nil {
-		dlog.Fatalf("Failed to load config: %v", err)
+		dlog.Fatalf("Failed to load config: %v", err.ToString())
 	}
 
 	dlog.Print("Config loaded.")
@@ -24,9 +24,9 @@ func main() {
 
 	log.Info().Msgf("Environments: %s", cfg.ToString(false))
 
-	err = database.Init(cfg)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to initialize database")
+	dbErr := database.Init(cfg)
+	if dbErr != nil {
+		log.Fatal().Err(dbErr).Caller().Msgf("Failed to initialize database: %s", dbErr.ToString())
 	}
 
 	log.Info().Msg("Application started.")

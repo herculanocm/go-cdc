@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"go-cdc/internal/config"
-
+	"go-cdc/static"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -64,7 +64,7 @@ func Connect(config *config.Config) error {
 	return nil
 }
 
-func Init(config *config.Config) error {
+func Init(config *config.Config) static.ErrorUtil {
 	log.Info().Msg("Initializing database configuration...")
 
 	ConnConfig = &connParams{
@@ -77,6 +77,12 @@ func Init(config *config.Config) error {
 
 	log.Info().Msgf("Database technology: %s", config.DBTecnology)
 	log.Info().Msgf("Database connection string: %s", ConnConfig.GetConnString(false))
-	log.Info().Msg("Database configuration initialized.")
+
+	log.Info().Msg("Checking configuration environments...")
+	if config.DBHost == "" || config.DBPort == "" || config.DBUser == "" || config.DBPass == "" || config.DBName == "" {
+		log.Error().Msg("Database configuration is incomplete.")
+		return static.ErrEnvVarMissing
+	}
+
 	return nil
 }

@@ -22,6 +22,9 @@ func main() {
 	dlog.Print("Initializing logger...")
 	logger.Init(cfg)
 
+	log.Info().Msgf("App Name: %s", cfg.AppName)
+	log.Info().Msgf("App Env: %s", cfg.AppEnv)
+
 	err = database.Init(cfg)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize database")

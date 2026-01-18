@@ -30,6 +30,8 @@ type Config struct {
 	AppName string `mapstructure:"APP_GO_CDC_NAME"`
 	AppEnv  string `mapstructure:"APP_GO_CDC_ENV"`
 
+	AppLogLevel string `mapstructure:"APP_GO_CDC_LOG_LEVEL"`
+
 	AppReadEnvFromFile string `mapstructure:"APP_GO_CDC_READ_ENV_FROM_FILE"`
 
 	DBTecnology string `mapstructure:"APP_GO_CDC_DB_TECHNOLOGY"`
@@ -44,7 +46,7 @@ func LoadConfig(path string) (*Config, error) {
 	dlog.Print("Loading config...")
 
 	if ReadEnvFromFileEnabled() {
-		dlog.Print("...from file")
+		dlog.Print("...from file .env")
 		viper.AddConfigPath(path)
 		viper.SetConfigName(".env")
 		viper.SetConfigType("env")
@@ -70,6 +72,7 @@ func LoadConfig(path string) (*Config, error) {
 	cfg.AppEnv = os.Getenv("APP_GO_CDC_ENV")
 	cfg.AppReadEnvFromFile = os.Getenv("APP_GO_CDC_READ_ENV_FROM_FILE")
 	cfg.AppName = os.Getenv("APP_GO_CDC_NAME")
+	cfg.AppLogLevel = os.Getenv("APP_GO_CDC_LOG_LEVEL")
 	cfg.DBTecnology = os.Getenv("APP_GO_CDC_DB_TECHNOLOGY")
 	cfg.DBHost = os.Getenv("APP_GO_CDC_DB_HOST")
 	cfg.DBPort = os.Getenv("APP_GO_CDC_DB_PORT")

@@ -41,6 +41,7 @@ func Init(config *config.Config) error {
 		DBName: config.DBName,
 	}
 
+	log.Info().Msgf("Database technology: %s", config.DBTecnology)
 	log.Info().Msgf("Database connection string: %s", ConnConfig.GetConnString(false))
 	log.Info().Msg("Database configuration initialized.")
 	return nil

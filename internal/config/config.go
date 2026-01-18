@@ -32,15 +32,16 @@ type Config struct {
 
 	AppReadEnvFromFile string `mapstructure:"APP_GO_CDC_READ_ENV_FROM_FILE"`
 
-	DBHost string `mapstructure:"APP_GO_CDC_DB_HOST"`
-	DBPort string `mapstructure:"APP_GO_CDC_DB_PORT"`
-	DBUser string `mapstructure:"APP_GO_CDC_DB_USER"`
-	DBPass string `mapstructure:"APP_GO_CDC_DB_PASS"`
-	DBName string `mapstructure:"APP_GO_CDC_DB_NAME"`
+	DBTecnology string `mapstructure:"APP_GO_CDC_DB_TECHNOLOGY"`
+	DBHost      string `mapstructure:"APP_GO_CDC_DB_HOST"`
+	DBPort      string `mapstructure:"APP_GO_CDC_DB_PORT"`
+	DBUser      string `mapstructure:"APP_GO_CDC_DB_USER"`
+	DBPass      string `mapstructure:"APP_GO_CDC_DB_PASS"`
+	DBName      string `mapstructure:"APP_GO_CDC_DB_NAME"`
 }
 
 func LoadConfig(path string) (*Config, error) {
-	dlog.Print("loading config...")
+	dlog.Print("Loading config...")
 
 	if ReadEnvFromFileEnabled() {
 		dlog.Print("...from file")
@@ -51,14 +52,14 @@ func LoadConfig(path string) (*Config, error) {
 
 		if err := viper.ReadInConfig(); err != nil {
 			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-				dlog.Fatalf("config file not found in path: %s", path)
+				dlog.Fatalf("Config file not found in path: %s", path)
 				return nil, err
 			}
 		}
 
 		var cfg Config
 		if err := viper.Unmarshal(&cfg); err != nil {
-			dlog.Fatalf("unable to decode into struct: %v", err)
+			dlog.Fatalf("Unable to decode into struct: %v", err)
 			return nil, err
 		}
 		return &cfg, nil
@@ -69,6 +70,7 @@ func LoadConfig(path string) (*Config, error) {
 	cfg.AppEnv = os.Getenv("APP_GO_CDC_ENV")
 	cfg.AppReadEnvFromFile = os.Getenv("APP_GO_CDC_READ_ENV_FROM_FILE")
 	cfg.AppName = os.Getenv("APP_GO_CDC_NAME")
+	cfg.DBTecnology = os.Getenv("APP_GO_CDC_DB_TECHNOLOGY")
 	cfg.DBHost = os.Getenv("APP_GO_CDC_DB_HOST")
 	cfg.DBPort = os.Getenv("APP_GO_CDC_DB_PORT")
 	cfg.DBUser = os.Getenv("APP_GO_CDC_DB_USER")

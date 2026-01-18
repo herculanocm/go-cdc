@@ -1,9 +1,12 @@
 package main
 
 import (
+	"go-cdc/database"
 	"go-cdc/internal/config"
 	"go-cdc/internal/logger"
 	dlog "log"
+
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -18,4 +21,11 @@ func main() {
 	dlog.Print("Config loaded.")
 	dlog.Print("Initializing logger...")
 	logger.Init(cfg)
+
+	err = database.Init(cfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialize database")
+	}
+
+	log.Info().Msg("Application started.")
 }

@@ -1,9 +1,16 @@
 package database
 
 import (
+	"context"
+	"database/sql"
 	"go-cdc/internal/config"
 
+	"time"
+
 	"github.com/rs/zerolog/log"
+
+	// Importa o driver oficial
+	_ "github.com/microsoft/go-mssqldb"
 )
 
 type connParams struct {
@@ -29,6 +36,33 @@ func (c *connParams) GetConnString(showPassword bool) string {
 }
 
 var ConnConfig *connParams
+var db *sql.DB
+
+func GetDB() *sql.DB {
+	return db
+}
+
+func Connect(config *config.Config) error {
+	var err error
+	log.Info().Msg("Connecting to the database...")
+	db, err = sql.Open("sqlserver", ConnConfig.GetConnString(true))
+	if err != nil {
+		log.Error().Err(err).Msg("Error opening database connection")
+		return err
+	}
+
+	// Testa a conexão
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err = db.PingContext(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Error pinging database")
+		return err
+	}
+
+	log.Info().Msg("Database connection established.")
+	return nil
+}
 
 func Init(config *config.Config) error {
 	log.Info().Msg("Initializing database configuration...")

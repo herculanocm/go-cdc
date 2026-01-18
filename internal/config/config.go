@@ -40,12 +40,12 @@ type Config struct {
 }
 
 func LoadConfig(path string) (*Config, error) {
-	dlog.Print("loading config")
+	dlog.Print("loading config...")
 
 	if ReadEnvFromFileEnabled() {
-		dlog.Print(" from file\n")
+		dlog.Print("-from file")
 		viper.AddConfigPath(path)
-		viper.SetConfigName("app")
+		viper.SetConfigName(".env")
 		viper.SetConfigType("env")
 		viper.AutomaticEnv()
 
@@ -64,7 +64,7 @@ func LoadConfig(path string) (*Config, error) {
 		return &cfg, nil
 	}
 
-	dlog.Print(" from environment variables\n")
+	dlog.Print("-from environment variables\n")
 	var cfg Config
 	cfg.AppEnv = os.Getenv("APP_GO_CDC_ENV")
 	cfg.AppReadEnvFromFile = os.Getenv("APP_GO_CDC_READ_ENV_FROM_FILE")

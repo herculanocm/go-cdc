@@ -35,6 +35,8 @@ type Config struct {
 
 	AppLogLevel string `mapstructure:"APP_GO_CDC_LOG_LEVEL"`
 
+	HealthCheckInterval int `mapstructure:"APP_GO_CDC_HEALTH_CHECK_INTERVAL"`
+
 	AppReadEnvFromFile string `mapstructure:"APP_GO_CDC_READ_ENV_FROM_FILE"`
 
 	DBTecnology       string `mapstructure:"APP_GO_CDC_DB_TECHNOLOGY"`
@@ -109,6 +111,8 @@ func LoadConfig(path string) (*Config, static.ErrorUtil) {
 		viper.SetDefault("APP_GO_CDC_LOG_LEVEL", static.APP_GO_CDC_LOG_LEVEL)
 		viper.SetDefault("APP_GO_CDC_READ_ENV_FROM_FILE", "true")
 
+		viper.SetDefault("APP_GO_CDC_HEALTH_CHECK_INTERVAL", static.APP_GO_CDC_HEALTH_CHECK_INTERVAL)
+
 		viper.SetDefault("APP_GO_CDC_DB_MAX_OPEN_CONNS", static.APP_GO_CDC_DB_MAX_OPEN_CONNS)
 		viper.SetDefault("APP_GO_CDC_DB_MAX_IDLE_CONNS", static.APP_GO_CDC_DB_MAX_IDLE_CONNS)
 		viper.SetDefault("APP_GO_CDC_DB_CONN_MAX_LIFETIME", static.APP_GO_CDC_DB_CONN_MAX_LIFETIME)
@@ -157,6 +161,15 @@ func LoadConfig(path string) (*Config, static.ErrorUtil) {
 		appLogLevel = static.APP_GO_CDC_LOG_LEVEL
 	}
 	cfg.AppLogLevel = appLogLevel
+
+	healthCheckInterval := os.Getenv("APP_GO_CDC_HEALTH_CHECK_INTERVAL")
+	if healthCheckInterval == "" {
+		cfg.HealthCheckInterval = static.APP_GO_CDC_HEALTH_CHECK_INTERVAL
+	} else {
+		if v, err := strconv.Atoi(healthCheckInterval); err == nil {
+			cfg.HealthCheckInterval = v
+		}
+	}
 
 	cfg.DBTecnology = os.Getenv("APP_GO_CDC_DB_TECHNOLOGY")
 	cfg.DBHost = os.Getenv("APP_GO_CDC_DB_HOST")

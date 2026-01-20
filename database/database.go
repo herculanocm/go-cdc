@@ -20,7 +20,7 @@ func Init(config *config.Config) static.ErrorUtil {
 	switch config.DBTecnology {
 	case "sqlserver":
 		{
-			log.Info().Msg("Testing SQL Server connection...")
+			log.Info().Msg("Initializing SQL Server package...")
 			errDb := sqlserver.Init(config)
 			if errDb != nil {
 				return errDb

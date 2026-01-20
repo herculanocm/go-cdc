@@ -5,12 +5,14 @@ import (
 	"database/sql"
 	"go-cdc/internal/config"
 	"go-cdc/static"
+	"sync"
 	"time"
 
 	_ "github.com/microsoft/go-mssqldb"
 	"github.com/rs/zerolog/log"
 )
 
+var once sync.Once
 var db *sql.DB
 var ConnConfig *connParams
 
@@ -37,26 +39,16 @@ func (c *connParams) GetConnString(showPassword bool) string {
 		"trustservercertificate=" + "true" + ";"
 }
 
-func Connect(config *config.Config) error {
-	var err error
-	log.Info().Msg("Connecting to the database...")
-	db, err = sql.Open("sqlserver", ConnConfig.GetConnString(true))
-	if err != nil {
-		log.Error().Err(err).Msg("Error opening database connection")
-		return err
-	}
+// GetDB retorna a instância única do pool (thread-safe)
+func GetDB() *sql.DB {
+	return db
+}
 
-	// Testa a conexão
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func HealthCheck(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
-	err = db.PingContext(ctx)
-	if err != nil {
-		log.Error().Err(err).Msg("Error pinging database")
-		return err
-	}
 
-	log.Info().Msg("Database connection established.")
-	return nil
+	return GetDB().PingContext(ctx)
 }
 
 func Init(config *config.Config) static.ErrorUtil {
@@ -68,9 +60,33 @@ func Init(config *config.Config) static.ErrorUtil {
 		DBName: config.DBName,
 	}
 
-	err := Connect(config)
-	if err != nil {
-		return static.NewErrorUtil("Failed to initialize SQL Server database", "SQLSERVER_INIT_FAILED", err, err.Error())
+	log.Info().Msg("Configuring database connection...")
+	var initErr error
+	once.Do(func() {
+		db, initErr = sql.Open("sqlserver", ConnConfig.GetConnString(true))
+		if initErr != nil {
+			return
+		}
+
+		// Pool sizing para CDC workload
+		db.SetMaxOpenConns(config.DBMaxOpenConns) // 25-50 para CDC
+		db.SetMaxIdleConns(config.DBMaxIdleConns) // ~10-20
+		db.SetConnMaxLifetime(time.Duration(config.DBConnMaxLifetime) * time.Minute)
+		db.SetConnMaxIdleTime(5 * time.Minute) // Libera conexões idle
+
+		initErr = db.PingContext(context.Background())
+	})
+
+	if initErr != nil {
+		initErrUtil := static.NewErrorUtil("Failed to open database connection", "SQLSERVER_INIT_FAILED", initErr, initErr.Error())
+		return initErrUtil
 	}
+
+	log.Info().Msg("Pinging database to verify connection...")
+	err := HealthCheck(context.Background())
+	if err != nil {
+		return static.NewErrorUtil("Failed to ping database", "SQLSERVER_PING_FAILED", err, err.Error())
+	}
+
 	return nil
 }

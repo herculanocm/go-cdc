@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -40,6 +41,5 @@ func (h *HealthMonitor) check(ctx context.Context) {
 	start := time.Now()
 
 	log.Info().
-		Dur("duration", time.Since(start)).
-		Msg("Health check completed")
+		Msgf("Health check completed successfully, total seconds: %s", fmt.Sprintf("%.6fs", time.Since(start).Seconds()))
 }

@@ -43,7 +43,8 @@ func main() {
 
 	log.Info().Msg("Initializing application components...")
 	// 5. Iniciar monitoramento de saúde
-	healthMonitor := monitoring.NewHealthMonitor(5 * time.Second)
+	log.Info().Msgf("HealthCheck interval loop: %d seconds", cfg.HealthCheckIntervalSeconds)
+	healthMonitor := monitoring.NewHealthMonitor(time.Duration(cfg.HealthCheckIntervalSeconds) * time.Second)
 	go healthMonitor.Start(ctx)
 
 	sigChan := make(chan os.Signal, 1)

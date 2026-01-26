@@ -7,7 +7,6 @@ import (
 	"go-cdc/internal/config"
 	"go-cdc/internal/logger"
 	"go-cdc/internal/monitoring"
-	"go-cdc/internal/runtime"
 	dlog "log"
 	"os"
 	"os/signal"
@@ -26,12 +25,9 @@ func main() {
 		dlog.Fatalf("Failed to load config: %v", err.ToString())
 	}
 
-	// 2. Inicializar metadados do runtime (pod/container) - INJEÇÃO
-	metadata := runtime.NewMetadata(cfg.AppVersion, cfg.AppEnv)
-
 	// 3. Inicializar logger com contexto global - INJEÇÃO
 	dlog.Print("Initializing logger...")
-	logger.Init(cfg, metadata.ToLogFields())
+	logger.Init(cfg)
 	log.Info().Msg("Logger initialized with pod metadata")
 	log.Info().Msgf("Configuration: %s", cfg.ToString(false))
 
@@ -54,7 +50,6 @@ func main() {
 	healthMonitor := monitoring.NewHealthMonitor(
 		cfg,       // Dependência 1: Config
 		dbManager, // Dependência 2: HealthChecker (DatabaseManager implementa a interface)
-		metadata,  // Dependência 3: Runtime Metadata
 	)
 	go healthMonitor.Start(ctx)
 

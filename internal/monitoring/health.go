@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"go-cdc/internal/config"
-	"go-cdc/internal/runtime"
 	"go-cdc/static"
 
 	"github.com/rs/zerolog/log"
@@ -19,15 +18,13 @@ type HealthChecker interface {
 type HealthMonitor struct {
 	cfg           *config.Config
 	healthChecker HealthChecker
-	metadata      *runtime.Metadata // Injetado via construtor
 }
 
 // NewHealthMonitor cria um monitor com todas as dependências injetadas
-func NewHealthMonitor(cfg *config.Config, checker HealthChecker, metadata *runtime.Metadata) *HealthMonitor {
+func NewHealthMonitor(cfg *config.Config, checker HealthChecker) *HealthMonitor {
 	return &HealthMonitor{
 		cfg:           cfg,
 		healthChecker: checker,
-		metadata:      metadata,
 	}
 }
 

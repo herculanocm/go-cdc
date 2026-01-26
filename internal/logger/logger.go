@@ -10,7 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func Init(cfg *config.Config, contextFields map[string]interface{}) {
+func Init(cfg *config.Config) {
 	var logLevel zerolog.Level = zerolog.InfoLevel
 
 	if cfg.AppEnv == "prd" {
@@ -40,9 +40,9 @@ func Init(cfg *config.Config, contextFields map[string]interface{}) {
 	zerolog.SetGlobalLevel(logLevel)
 
 	// Adiciona campos globais ao contexto (pod metadata)
-	if contextFields != nil && len(contextFields) > 0 {
+	if cfg.ToLogFields() != nil && len(cfg.ToLogFields()) > 0 {
 		ctx := log.Logger.With()
-		for key, value := range contextFields {
+		for key, value := range cfg.ToLogFields() {
 			ctx = ctx.Interface(key, value)
 		}
 		log.Logger = ctx.Logger()

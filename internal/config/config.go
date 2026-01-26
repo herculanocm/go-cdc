@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-cdc/static"
 	dlog "log"
+	"net"
 	"os"
 	"reflect"
 	"strconv"
@@ -34,6 +35,12 @@ type Config struct {
 	AppEnv     string `mapstructure:"APP_GO_CDC_ENV"`
 	AppVersion string `mapstructure:"APP_GO_CDC_VERSION"` // Adicione esta linha
 
+	PodHostname string `mapstructure:"APP_GO_CDC_POD_HOSTNAME"`
+	PodName     string `mapstructure:"APP_GO_CDC_POD_NAME"`
+	PodIP       string `mapstructure:"APP_GO_CDC_POD_IP"`
+	NodeName    string `mapstructure:"APP_GO_CDC_NODE_NAME"`
+	Namespace   string `mapstructure:"APP_GO_CDC_POD_NAMESPACE"`
+
 	AppLogLevel string `mapstructure:"APP_GO_CDC_LOG_LEVEL"`
 
 	HealthCheckIntervalSeconds int `mapstructure:"APP_GO_CDC_HELTH_CHECK_INTERVAL_SECONDS"`
@@ -53,6 +60,61 @@ type Config struct {
 	DBConnMaxIdleTime    int    `mapstructure:"APP_GO_CDC_DB_CONN_MAX_IDLE_TIME"` // in minutes
 	DBEncrypt            bool   `mapstructure:"APP_GO_CDC_DB_ENCRYPT"`
 	DBPingTimeoutSeconds int    `mapstructure:"APP_GO_CDC_DB_PING_TIMEOUT_SECONDS"`
+}
+
+func getPodIP() string {
+	// Fallback: detecta o IP da interface de rede principal
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "unknown"
+	}
+
+	for _, addr := range addrs {
+		if ipNet, ok := addr.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
+			if ipNet.IP.To4() != nil {
+				return ipNet.IP.String()
+			}
+		}
+	}
+
+	return "unknown"
+}
+
+// ToLogFields retorna os campos para logging estruturado
+func (m *Config) ToLogFields() map[string]interface{} {
+	fields := make(map[string]interface{})
+
+	if m.PodHostname != "" {
+		fields["pod_hostname"] = m.PodHostname
+	}
+	if m.PodName != "" {
+		fields["pod_name"] = m.PodName
+	}
+	if m.PodIP != "" {
+		fields["pod_ip"] = m.PodIP
+	}
+	if m.NodeName != "" {
+		fields["node_name"] = m.NodeName
+	}
+	if m.Namespace != "" {
+		fields["namespace"] = m.Namespace
+	}
+	if m.AppVersion != "" {
+		fields["app_version"] = m.AppVersion
+	}
+	if m.AppEnv != "" {
+		fields["environment"] = m.AppEnv
+	}
+
+	return fields
+}
+
+// GetIdentifier retorna um identificador único do pod (para logs)
+func (c *Config) GetPodIdentifier() string {
+	if c.Namespace != "" {
+		return c.Namespace + "/" + c.PodName
+	}
+	return c.PodName
 }
 
 func (c *Config) ToString(showSecrets bool) string {
@@ -126,6 +188,18 @@ func LoadConfig(path string) (*Config, static.ErrorUtil) {
 		viper.SetDefault("APP_GO_CDC_DB_PING_TIMEOUT_SECONDS", static.APP_GO_CDC_DB_PING_TIMEOUT_SECONDS)
 		viper.SetDefault("APP_GO_CDC_DB_CONN_MAX_IDLE_TIME", static.APP_GO_CDC_DB_CONN_MAX_IDLE_TIME)
 
+		hostname, _ := os.Hostname()
+		viper.SetDefault("APP_GO_CDC_POD_HOSTNAME", hostname)
+
+		// Em Kubernetes, o hostname geralmente é o pod name
+		podName := hostname
+		viper.SetDefault("APP_GO_CDC_POD_NAME", podName)
+
+		viper.SetDefault("APP_GO_CDC_POD_IP", getPodIP())
+
+		viper.SetDefault("APP_GO_CDC_NODE_NAME", static.APP_GO_CDC_NODE_NAME)
+		viper.SetDefault("APP_GO_CDC_POD_NAMESPACE", static.APP_GO_CDC_POD_NAMESPACE)
+
 		viper.AutomaticEnv()
 
 		if err := viper.ReadInConfig(); err != nil {
@@ -167,6 +241,37 @@ func LoadConfig(path string) (*Config, static.ErrorUtil) {
 		appLogLevel = static.APP_GO_CDC_LOG_LEVEL
 	}
 	cfg.AppLogLevel = appLogLevel
+
+	podHostname := os.Getenv("APP_GO_CDC_POD_HOSTNAME")
+	if podHostname == "" {
+		hostname, _ := os.Hostname()
+		podHostname = hostname
+	}
+	cfg.PodHostname = podHostname
+
+	podName := os.Getenv("APP_GO_CDC_POD_NAME")
+	if podName == "" {
+		podName = cfg.PodHostname
+	}
+	cfg.PodName = podName
+
+	podIP := os.Getenv("APP_GO_CDC_POD_IP")
+	if podIP == "" {
+		podIP = getPodIP()
+	}
+	cfg.PodIP = podIP
+
+	nodeName := os.Getenv("APP_GO_CDC_NODE_NAME")
+	if nodeName == "" {
+		nodeName = static.APP_GO_CDC_NODE_NAME
+	}
+	cfg.NodeName = nodeName
+
+	namespace := os.Getenv("APP_GO_CDC_POD_NAMESPACE")
+	if namespace == "" {
+		namespace = static.APP_GO_CDC_POD_NAMESPACE
+	}
+	cfg.Namespace = namespace
 
 	healthCheckInterval := os.Getenv("APP_GO_CDC_HELTH_CHECK_INTERVAL_SECONDS")
 	if healthCheckInterval == "" {

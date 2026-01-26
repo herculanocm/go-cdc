@@ -12,3 +12,5 @@ const APP_GO_CDC_DB_ENCRYPT = true
 const APP_GO_CDC_HELTH_CHECK_INTERVAL_SECONDS = 5 // in seconds
 const APP_GO_CDC_DB_PING_TIMEOUT_SECONDS = 3      // in seconds
 const APP_GO_CDC_DB_CONN_MAX_IDLE_TIME = 5        // in minutes
+const APP_GO_CDC_NODE_NAME = "localhost"
+const APP_GO_CDC_POD_NAMESPACE = "default"

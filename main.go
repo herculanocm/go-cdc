@@ -1,3 +1,4 @@
+// main.go
 package main
 
 import (
@@ -6,6 +7,7 @@ import (
 	"go-cdc/internal/config"
 	"go-cdc/internal/logger"
 	"go-cdc/internal/monitoring"
+	"go-cdc/internal/runtime"
 	dlog "log"
 	"os"
 	"os/signal"
@@ -24,27 +26,36 @@ func main() {
 		dlog.Fatalf("Failed to load config: %v", err.ToString())
 	}
 
-	// 2. Inicializar logger
+	// 2. Inicializar metadados do runtime (pod/container) - INJEÇÃO
+	metadata := runtime.NewMetadata(cfg.AppVersion, cfg.AppEnv)
+
+	// 3. Inicializar logger com contexto global - INJEÇÃO
 	dlog.Print("Initializing logger...")
-	logger.Init(cfg)
-	log.Info().Msg("Logger initialized")
+	logger.Init(cfg, metadata.ToLogFields())
+	log.Info().Msg("Logger initialized with pod metadata")
 	log.Info().Msgf("Configuration: %s", cfg.ToString(false))
 
-	// 3. Inicializar database
+	// 4. Inicializar database - INJEÇÃO
 	log.Info().Msg("Initializing database connection pool...")
-	dbErr := database.Init(cfg)
+	dbManager, dbErr := database.Init(cfg)
 	if dbErr != nil {
 		log.Fatal().Err(dbErr).Caller().Msgf("Failed to initialize database: %s", dbErr.ToString())
 	}
+	defer dbManager.Close()
 
-	// 4. Context para shutdown
+	// 5. Context para shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	log.Info().Msg("Initializing application components...")
-	// 5. Iniciar monitoramento de saúde
+
+	// 6. Iniciar monitoramento de saúde - INJEÇÃO DE 3 DEPENDÊNCIAS
 	log.Info().Msgf("HealthCheck interval loop: %d seconds", cfg.HealthCheckIntervalSeconds)
-	healthMonitor := monitoring.NewHealthMonitor(time.Duration(cfg.HealthCheckIntervalSeconds) * time.Second)
+	healthMonitor := monitoring.NewHealthMonitor(
+		cfg,       // Dependência 1: Config
+		dbManager, // Dependência 2: HealthChecker (DatabaseManager implementa a interface)
+		metadata,  // Dependência 3: Runtime Metadata
+	)
 	go healthMonitor.Start(ctx)
 
 	sigChan := make(chan os.Signal, 1)

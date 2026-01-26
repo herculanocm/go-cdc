@@ -30,8 +30,9 @@ func ReadEnvFromFileEnabled() bool {
 }
 
 type Config struct {
-	AppName string `mapstructure:"APP_GO_CDC_NAME"`
-	AppEnv  string `mapstructure:"APP_GO_CDC_ENV"`
+	AppName    string `mapstructure:"APP_GO_CDC_NAME"`
+	AppEnv     string `mapstructure:"APP_GO_CDC_ENV"`
+	AppVersion string `mapstructure:"APP_GO_CDC_VERSION"` // Adicione esta linha
 
 	AppLogLevel string `mapstructure:"APP_GO_CDC_LOG_LEVEL"`
 
@@ -39,17 +40,19 @@ type Config struct {
 
 	AppReadEnvFromFile string `mapstructure:"APP_GO_CDC_READ_ENV_FROM_FILE"`
 
-	DBTecnology       string `mapstructure:"APP_GO_CDC_DB_TECHNOLOGY"`
-	DBHost            string `mapstructure:"APP_GO_CDC_DB_HOST"`
-	DBPort            string `mapstructure:"APP_GO_CDC_DB_PORT"`
-	DBUser            string `mapstructure:"APP_GO_CDC_DB_USER"`
-	DBPass            string `mapstructure:"APP_GO_CDC_DB_PASS"`
-	DBName            string `mapstructure:"APP_GO_CDC_DB_NAME"`
-	DBMaxOpenConns    int    `mapstructure:"APP_GO_CDC_DB_MAX_OPEN_CONNS"`
-	DBMaxIdleConns    int    `mapstructure:"APP_GO_CDC_DB_MAX_IDLE_CONNS"`
-	DBConnMaxLifetime int    `mapstructure:"APP_GO_CDC_DB_CONN_MAX_LIFETIME"` // in minutes
-	DBTrustServerCert bool   `mapstructure:"APP_GO_CDC_DB_TRUST_SERVER_CERT"`
-	DBEncrypt         bool   `mapstructure:"APP_GO_CDC_DB_ENCRYPT"`
+	DBTecnology          string `mapstructure:"APP_GO_CDC_DB_TECHNOLOGY"`
+	DBHost               string `mapstructure:"APP_GO_CDC_DB_HOST"`
+	DBPort               string `mapstructure:"APP_GO_CDC_DB_PORT"`
+	DBUser               string `mapstructure:"APP_GO_CDC_DB_USER"`
+	DBPass               string `mapstructure:"APP_GO_CDC_DB_PASS"`
+	DBName               string `mapstructure:"APP_GO_CDC_DB_NAME"`
+	DBMaxOpenConns       int    `mapstructure:"APP_GO_CDC_DB_MAX_OPEN_CONNS"`
+	DBMaxIdleConns       int    `mapstructure:"APP_GO_CDC_DB_MAX_IDLE_CONNS"`
+	DBConnMaxLifetime    int    `mapstructure:"APP_GO_CDC_DB_CONN_MAX_LIFETIME"` // in minutes
+	DBTrustServerCert    bool   `mapstructure:"APP_GO_CDC_DB_TRUST_SERVER_CERT"`
+	DBConnMaxIdleTime    int    `mapstructure:"APP_GO_CDC_DB_CONN_MAX_IDLE_TIME"` // in minutes
+	DBEncrypt            bool   `mapstructure:"APP_GO_CDC_DB_ENCRYPT"`
+	DBPingTimeoutSeconds int    `mapstructure:"APP_GO_CDC_DB_PING_TIMEOUT_SECONDS"`
 }
 
 func (c *Config) ToString(showSecrets bool) string {
@@ -120,6 +123,9 @@ func LoadConfig(path string) (*Config, static.ErrorUtil) {
 		viper.SetDefault("APP_GO_CDC_DB_TRUST_SERVER_CERT", static.APP_GO_CDC_DB_TRUST_SERVER_CERT)
 		viper.SetDefault("APP_GO_CDC_DB_ENCRYPT", static.APP_GO_CDC_DB_ENCRYPT)
 
+		viper.SetDefault("APP_GO_CDC_DB_PING_TIMEOUT_SECONDS", static.APP_GO_CDC_DB_PING_TIMEOUT_SECONDS)
+		viper.SetDefault("APP_GO_CDC_DB_CONN_MAX_IDLE_TIME", static.APP_GO_CDC_DB_CONN_MAX_IDLE_TIME)
+
 		viper.AutomaticEnv()
 
 		if err := viper.ReadInConfig(); err != nil {
@@ -168,6 +174,24 @@ func LoadConfig(path string) (*Config, static.ErrorUtil) {
 	} else {
 		if v, err := strconv.Atoi(healthCheckInterval); err == nil {
 			cfg.HealthCheckIntervalSeconds = v
+		}
+	}
+
+	dbPingTimeout := os.Getenv("APP_GO_CDC_DB_PING_TIMEOUT_SECONDS")
+	if dbPingTimeout == "" {
+		cfg.DBPingTimeoutSeconds = static.APP_GO_CDC_DB_PING_TIMEOUT_SECONDS
+	} else {
+		if v, err := strconv.Atoi(dbPingTimeout); err == nil {
+			cfg.DBPingTimeoutSeconds = v
+		}
+	}
+
+	dbConnMaxIdleTime := os.Getenv("APP_GO_CDC_DB_CONN_MAX_IDLE_TIME")
+	if dbConnMaxIdleTime == "" {
+		cfg.DBConnMaxIdleTime = static.APP_GO_CDC_DB_CONN_MAX_IDLE_TIME
+	} else {
+		if v, err := strconv.Atoi(dbConnMaxIdleTime); err == nil {
+			cfg.DBConnMaxIdleTime = v
 		}
 	}
 

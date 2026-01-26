@@ -1,3 +1,4 @@
+// internal/logger/logger.go
 package logger
 
 import (
@@ -9,8 +10,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func Init(cfg *config.Config) {
-	var logLevel zerolog.Level = zerolog.InfoLevel // Nível padrão é Info
+func Init(cfg *config.Config, contextFields map[string]interface{}) {
+	var logLevel zerolog.Level = zerolog.InfoLevel
 
 	if cfg.AppEnv == "prd" {
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
@@ -37,6 +38,16 @@ func Init(cfg *config.Config) {
 	}
 
 	zerolog.SetGlobalLevel(logLevel)
+
+	// Adiciona campos globais ao contexto (pod metadata)
+	if contextFields != nil && len(contextFields) > 0 {
+		ctx := log.Logger.With()
+		for key, value := range contextFields {
+			ctx = ctx.Interface(key, value)
+		}
+		log.Logger = ctx.Logger()
+	}
+
 	log.Info().Msg("Logger initialized")
-	log.Info().Msgf("Log level set to: %s.", logLevel.String())
+	log.Info().Msgf("Log level set to: %s", logLevel.String())
 }
